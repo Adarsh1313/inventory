@@ -1,31 +1,48 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Load data
-file_path = 'New Microsoft Excel Worksheet.xlsx'
-df = pd.read_excel(file_path, sheet_name='Sheet1')
+# Function to simulate loading data from Excel file
+@st.cache_data
+def load_data():
+    return load_data
 
-# Display the current inventory
-st.title("Inventory Tracking System")
-st.subheader("Current Inventory")
-st.write(df)
+# Sidebar for navigation
+def sidebar():
+    st.sidebar.title("Navigation")
+    pages = ["Home", "Kidswear", "Ladieswear", "Menswear", "Accessories", "Other Items", "Activewear", "Sales Tracking"]
+    return st.sidebar.radio("Go to", pages)
 
-# Input sales data
-st.subheader("Sales Entry")
-style = st.selectbox("Select Style", df['STYLE'].unique())
-colour = st.selectbox("Select Colour", df[df['STYLE'] == style]['COLOUR'].unique())
-sizes = ['XS/S', 'M/L', 'XL/2XL', '3XL']
-sales = {size: st.number_input(f"Sales for {size}", min_value=0, max_value=int(df.loc[(df['STYLE'] == style) & (df['COLOUR'] == colour), size].values[0])) for size in sizes}
+# Home Page
+def home_page():
+    st.title("Inventory Management System")
+    st.write("Welcome to the Inventory Management System for your textile business.")
+    st.write("Use the navigation sidebar to switch between different sections.")
 
-# Update inventory
-if st.button("Update Inventory"):
-    for size in sizes:
-        df.loc[(df['STYLE'] == style) & (df['COLOUR'] == colour), size] -= sales[size]
-    df['Qty'] = df[sizes].sum(axis=1)
-    st.success("Inventory updated successfully!")
-    st.write(df)
+# Category Pages
+def category_page(category, data):
+    st.title(f"{category} Inventory")
+    st.write(f"Manage and view your {category} inventory here.")
+    st.dataframe(data)
 
-    # Save updated inventory back to the same Excel file
-    with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        df.to_excel(writer, sheet_name='Sheet1', index=False)
-    st.success("Inventory saved to Excel file successfully!")
+# Sales Tracking Page
+def sales_tracking_page(data):
+    st.title("Sales Tracking")
+    st.write("Track your sales data here.")
+    st.dataframe(data)
+
+# Main Function to Control Page Navigation
+def main():
+    data = load_data()
+    page = sidebar()
+    
+    if page == "Home":
+        home_page()
+    elif page in ["Kidswear", "Ladieswear", "Menswear", "Accessories", "Other Items", "Activewear"]:
+        category_page(page, data.get(page, pd.DataFrame()))
+    elif page == "Sales Tracking":
+        sales_tracking_page(data.get("Sales", pd.DataFrame()))
+
+if __name__ == "__main__":
+    main()
